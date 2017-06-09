@@ -1,0 +1,40 @@
+<apex:component >
+	<apex:attribute name="lst_ObjFields" description="This is the value for the component."
+        type="String[]" required="true"/>
+
+    <apex:attribute name="lst_ObjIds" description="This is the value for the component."
+        type="String[]" required="true"/>
+
+    <apex:attribute name="map_positionToOppAndSnap" description="This is the value for the component."
+        type="Map" required="true"/>
+
+	<table class="slds-table slds-table--bordered slds-no-row-hover" border="1">
+	    <thead>
+	    	<th class="slds-is-sortable headers" width="10%">
+	    	</th>
+	    	<apex:repeat value="{!lst_ObjFields}" var="objField">
+	    		<th class="slds-is-sortable headers" width="10%">
+	                <apex:outputText value="{!SUBSTITUTE(objField,'_',' ')}" style="font-weight: bold;"/>
+	            </th>
+	    	</apex:repeat>
+	    </thead>
+	        
+	    <tbody>
+	        <apex:repeat value="{!lst_ObjFields}" var="objField">
+	            <tr>
+	            	<td class="slds-is-sortable headers">
+	                	<apex:outputText value="{!SUBSTITUTE(objField,'_',' ')}"/>
+	                </td>
+	            	<apex:repeat value="{!lst_ObjIds}" var="objIds">
+	            		<td class="{!map_positionToOppAndSnap[LOWER(objField)+'-'+LOWER(objIds)].colorClass} tableValues" onclick="selectPos('{!LOWER(objField)+'-'+LOWER(objIds)}')">
+	            			<apex:outputText value="{!IF(map_positionToOppAndSnap[LOWER(objField)+'-'+LOWER(objIds)].obj.size > 0,
+                            map_positionToOppAndSnap[LOWER(objField)+'-'+LOWER(objIds)].obj.size,
+                            '')}" styleClass="{!LOWER(objField)}-{!LOWER(objIds)} slds-cell-wrap">  
+	                        </apex:outputText>                                    
+	                    </td>
+	            	</apex:repeat>
+	            </tr>
+	        </apex:repeat>
+	    </tbody>
+	</table>
+</apex:component>
