@@ -1,244 +1,249 @@
+<!-- MOTI this file contained mixed tabs and spaces for indentation
+which will cramp the view  in some editors no matter what you choose
+stick to one (you can convert easily in any good editor)-->
 <apex:page controller="Ctrl_RouteOptimisation" sidebar="false">
-	<head>
-		<apex:includeScript value="{!$Resource.jQuery}"/>
-		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script> 
+  <head>
+    <apex:includeScript value="{!$Resource.jQuery}"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <!-- MOTI adding jquery twice ??-->
+    <style>
+      #map_wrapper {
+          height: 800px;
+      }
 
-		<style>
-			#map_wrapper {
-			    height: 800px;
-			}
-
-			#map_canvas {
-			    width: 80%;
-			    height: 95%;
-			}
-		</style>
-	</head> 
+      #map_canvas {
+          width: 80%;
+          height: 95%;
+      }
+    </style>
+    <!-- MOTI Inline style is not good in real life i would 100% put it
+    inline cause im lazy but for interbiew better stick with best practitces-->
+  </head>
 
     <body>
-		<apex:form id="form">
-			<apex:actionFunction name="showLocations" reRender="form" action="{!ShowLocations}" oncomplete="addMarks();"/>
-			<apex:inputHidden value="{!json_lst_WorkOrders}" id="lst_WorkOrders"/>
-			<apex:pageMessages id="errors" />
-			<apex:pageBlock title="Pick Date and Technition to Optimaize" mode="edit">
-				<apex:pageBlockButtons location="top">
-					<apex:commandButton value="Optimize" oncomplete="addMarks();" action="{!Optimize}" reRender="form"/>
-					<apex:commandButton value="Optimize One Step" oncomplete="addMarks();" action="{!OptimizeOneStep}" reRender="form"/>
-					<apex:commandButton value="Swap Nodes" oncomplete="addMarks();" action="{!SwapNodes}" reRender="form"/>
-					<apex:commandButton value="Check Distance" oncomplete="addMarks();" action="{!checkDistance}" reRender="form"/>
-				</apex:pageBlockButtons>
-						
-				<apex:pageBlockSection columns="2">
-	                <apex:pageBlockSectionItem helpText="...">
-	                    <apex:outputLabel value="Work Day"/>
-	                    <apex:inputfield value="{!dummyWD.Date__c}"  onchange="showLocations();"/>
-	                </apex:pageBlockSectionItem>
+    <apex:form id="form">
+      <apex:actionFunction name="showLocations" reRender="form" action="{!ShowLocations}" oncomplete="addMarks();"/>
+      <apex:inputHidden value="{!json_lst_WorkOrders}" id="lst_WorkOrders"/>
+      <apex:pageMessages id="errors" />
+      <apex:pageBlock title="Pick Date and Technition to Optimaize" mode="edit">
+        <apex:pageBlockButtons location="top">
+          <apex:commandButton value="Optimize" oncomplete="addMarks();" action="{!Optimize}" reRender="form"/>
+          <apex:commandButton value="Optimize One Step" oncomplete="addMarks();" action="{!OptimizeOneStep}" reRender="form"/>
+          <apex:commandButton value="Swap Nodes" oncomplete="addMarks();" action="{!SwapNodes}" reRender="form"/>
+          <apex:commandButton value="Check Distance" oncomplete="addMarks();" action="{!checkDistance}" reRender="form"/>
+        </apex:pageBlockButtons>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText >Technician</apex:outputText>
-	                    <apex:inputfield value="{!dummyWD.Technician__c}" onchange="showLocations();"/>	
-	                </apex:pageBlockSectionItem>
+        <apex:pageBlockSection columns="2">
+                  <apex:pageBlockSectionItem helpText="...">
+                      <apex:outputLabel value="Work Day"/>
+                      <apex:inputfield value="{!dummyWD.Date__c}"  onchange="showLocations();"/>
+                  </apex:pageBlockSectionItem>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText >Current Global Distance</apex:outputText>
-	                    <apex:outputText value="{!distance}"/>	
-	                </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText >Technician</apex:outputText>
+                      <apex:inputfield value="{!dummyWD.Technician__c}" onchange="showLocations();"/>
+                  </apex:pageBlockSectionItem>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText>Is Optimized</apex:outputText>
-	                    <apex:outputText value="{!isOptimized}"/>	
-	                </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText >Current Global Distance</apex:outputText>
+                      <apex:outputText value="{!distance}"/>
+                  </apex:pageBlockSectionItem>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText>First Node</apex:outputText>
-	                    <apex:inputText value="{!firstNode}"/>	
-	                </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText>Is Optimized</apex:outputText>
+                      <apex:outputText value="{!isOptimized}"/>
+                  </apex:pageBlockSectionItem>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText>Second Node</apex:outputText>
-	                    <apex:inputText value="{!secondNode}"/>	
-	                </apex:pageBlockSectionItem>
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText>First Node</apex:outputText>
+                      <apex:inputText value="{!firstNode}"/>
+                  </apex:pageBlockSectionItem>
 
-	                <apex:pageBlockSectionItem>
-	                    <apex:outputText>This Distance</apex:outputText>
-	                    <apex:outputText value="{!thisDistance}"/>	
-	                </apex:pageBlockSectionItem>
-	            </apex:pageBlockSection>
-			</apex:pageBlock> 
-		</apex:form>
-		
-		<center>
-			<div id="map_wrapper">
-			    <div id="map_canvas" class="mapping"/>	
-			</div>
-		</center>
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText>Second Node</apex:outputText>
+                      <apex:inputText value="{!secondNode}"/>
+                  </apex:pageBlockSectionItem>
 
-		<script type="text/javascript"> 
-			$(document).ready(function() {
-			  	var script = document.createElement('script');
-		    	script.src = "//maps.googleapis.com/maps/api/js?key=AIzaSyALnuAIZ4XWz65qCdBX0OtuO9wSImgoBEI&callback=getCurrLocation&amp;libraries=geometry";
-			    document.body.appendChild(script);
-			});
+                  <apex:pageBlockSectionItem>
+                      <apex:outputText>This Distance</apex:outputText>
+                      <apex:outputText value="{!thisDistance}"/>
+                  </apex:pageBlockSectionItem>
+              </apex:pageBlockSection>
+      </apex:pageBlock>
+    </apex:form>
 
-			function getCurrLocation(){
-			    var startPos;
-		        var geoSuccess = function(position) {
-		            startPos = position;
-		            initialize(startPos);
-		        };
-		        navigator.geolocation.getCurrentPosition(geoSuccess);
-			}
+    <center>
+      <div id="map_wrapper">
+          <div id="map_canvas" class="mapping"/>
+      </div>
+    </center>
 
-			function initialize(startPos) {
-			    var map;
-			    var bounds = new google.maps.LatLngBounds();
-			    var mapOptions = { 
-			        mapTypeId: 'roadmap'
-			    };
-			                    
-			    // Display a map on the page
-			    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-			    map.setTilt(45);
-			    
-			    
-			    var markers = [
-			        ['You are here', startPos.coords.latitude,startPos.coords.longitude]
-			    ];
-			                        
-			    // Info Window Content
-			    var infoWindowContent = [
-			        ['<div class="info_content">' +
-			        '<h3>London Eye</h3>' +
-			        '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
-			        ['<div class="info_content">' +
-			        '<h3>Palace of Westminster</h3>' +
-			        '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
-			        '</div>']
-			    ];
-			        
-			    // Display multiple markers on a map
-			    var infoWindow = new google.maps.InfoWindow(), marker, i;
-			    
-			    // Loop through our array of markers & place each one on the map  
-			    for( i = 0; i < markers.length; i++ ) {
-			        var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
-			        bounds.extend(position);
-			        marker = new google.maps.Marker({
-			            position: position,
-			            map: map,
-			            title: markers[i][0]
-			        });
-			        
-			        // Allow each marker to have an info window    
-			        google.maps.event.addListener(marker, 'click', (function(marker, i) {
-			            return function() {
-			                infoWindow.setContent(infoWindowContent[i][0]);
-			                infoWindow.open(map, marker);
-			            }
-			        })(marker, i));
+    <!-- MOTI Inline Java script is not good in real life i would 100% put it
+    inline cause im lazy but for interbiew better stick with best practitces
+    and move to a file-->
+    <script type="text/javascript">
 
-			        // Automatically center the map fitting all markers on the screen
-			        map.fitBounds(bounds);
-			    }
+    $(document).ready(function() {
+      var script = document.createElement('script');
+      script.src = "//maps.googleapis.com/maps/api/js?key=AIzaSyALnuAIZ4XWz65qCdBX0OtuO9wSImgoBEI&callback=getCurrLocation&amp;libraries=geometry";
+      document.body.appendChild(script);
+    });
 
-			    // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
-			    var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-			        this.setZoom(14);
-			        google.maps.event.removeListener(boundsListener);
-			    });
+    function getCurrLocation(){
+      var startPos;
+      var geoSuccess = function(position) {
+        startPos = position;
+        initialize(startPos);
+      };
+      navigator.geolocation.getCurrentPosition(geoSuccess);
+    }
+
+    function initialize(startPos) {
+      var map;
+      var bounds = new google.maps.LatLngBounds();
+      var mapOptions = {
+        mapTypeId: 'roadmap'
+      };
+
+      // Display a map on the page
+      map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+      map.setTilt(45);
 
 
-			}
+      var markers = [
+        ['You are here', startPos.coords.latitude,startPos.coords.longitude]
+      ];
 
-				
-			function addMarks() {
-			    var map;
-			    var bounds = new google.maps.LatLngBounds();
-			    var mapOptions = {
-			        mapTypeId: 'roadmap'
-			    }; 
-			                    
-			    // Display a map on the page
-			    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-			    map.setTilt(45); 
-			        
-			    // Multiple Markers
-			    var markers = []; 
-			    var flightPlanCoordinates = [];
-			    var lst_WorkOrders = JSON.parse($('[id*=WorkOrders]').val());
+      // Info Window Content
+      var infoWindowContent = [
+        ['<div class="info_content">' +
+        '<h3>London Eye</h3>' +
+        '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
+        ['<div class="info_content">' +
+        '<h3>Palace of Westminster</h3>' +
+        '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
+        '</div>']
+      ];
 
-			    var startPos = {};
-			    startPos.lat = parseFloat('{!startLat}');
-			    startPos.lng = parseFloat('{!startLon}');
-			    markers.push(['start point', startPos.lat, startPos.lng]);
-			    flightPlanCoordinates.push({lat: startPos.lat, lng: startPos.lng});
-				for(var v in lst_WorkOrders){
-					markers.push([v, lst_WorkOrders[v].Location__Latitude__s, lst_WorkOrders[v].Location__Longitude__s]);
-					flightPlanCoordinates.push({lat: lst_WorkOrders[v].Location__Latitude__s, lng: lst_WorkOrders[v].Location__Longitude__s});
-				}
-				markers.push(['start point', startPos.lat, startPos.lng]);
-			    flightPlanCoordinates.push({lat: startPos.lat, lng: startPos.lng});
+      // Display multiple markers on a map
+      var infoWindow = new google.maps.InfoWindow(), marker, i;
 
-				
+      // Loop through our array of markers & place each one on the map
+      for( i = 0; i < markers.length; i++ ) {
+        var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
+        bounds.extend(position);
+        marker = new google.maps.Marker({
+          position: position,
+          map: map,
+          title: markers[i][0]
+        });
 
-			                        
-			    // Info Window Content
-			    var infoWindowContent = [
-			        ['<div class="info_content">' +
-			        '<h3>London Eye</h3>' +
-			        '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
-			        ['<div class="info_content">' +
-			        '<h3>Palace of Westminster</h3>' +
-			        '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
-			        '</div>']
-			    ];
-			        
-			    // Display multiple markers on a map
-			    var infoWindow = new google.maps.InfoWindow(), marker, i;
-			    
-			    var flightPath = new google.maps.Polyline({
-		          	path: flightPlanCoordinates,
-		          	geodesic: true,
-		          	strokeColor: '#FF0000',
-		          	strokeOpacity: 1.0,
-	          		strokeWeight: 2
-		        });
+        // Allow each marker to have an info window
+        google.maps.event.addListener(marker, 'click', (function(marker, i) {
+          return function() {
+            infoWindow.setContent(infoWindowContent[i][0]);
+            infoWindow.open(map, marker);
+          }
+        })(marker, i));
 
-			    flightPath.setMap(map);
-			    
-			    // Loop through our array of markers & place each one on the map  
-			    for( i = 0; i < markers.length; i++ ) {
-			        var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
-			        bounds.extend(position);
-			        marker = new google.maps.Marker({
-			            position: position,
-			            map: map,
-			            title: markers[i][0]
-			        });
-			        
-			        // Allow each marker to have an info window    
-			        google.maps.event.addListener(marker, 'click', (function(marker, i) {
-			            return function() {
-			                infoWindow.setContent(infoWindowContent[i][0]);
-			                infoWindow.open(map, marker);
-			            }
-			        })(marker, i));
+        // Automatically center the map fitting all markers on the screen
+        map.fitBounds(bounds);
+      }
 
-			        // Automatically center the map fitting all markers on the screen
-			        map.fitBounds(bounds);
-			    }
+      // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
+      var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+        this.setZoom(14);
+        google.maps.event.removeListener(boundsListener);
+      });
+      // MOTI what is this empty line for ? try to keep code tidy
 
-			    // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
-			    var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-			        this.setZoom(14);
-			        google.maps.event.removeListener(boundsListener);
-			    });
+    }
 
-			    var polyLengthInMeters = google.maps.geometry.spherical.computeLength(flightPath.getPath().getArray());
-			    console.log(polyLengthInMeters);
-			}
 
-			function setFocusOnLoad() {}
-		</script>
-	</body>
+    function addMarks() {
+      var map;
+      var bounds = new google.maps.LatLngBounds();
+      var mapOptions = {
+        mapTypeId: 'roadmap'
+      };
+
+      // Display a map on the page
+      map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+      map.setTilt(45);
+
+      // Multiple Markers
+      var markers = [];
+      var flightPlanCoordinates = [];
+      var lst_WorkOrders = JSON.parse($('[id*=WorkOrders]').val());
+
+      var startPos = {};
+      startPos.lat = parseFloat('{!startLat}');
+      startPos.lng = parseFloat('{!startLon}');
+      markers.push(['start point', startPos.lat, startPos.lng]);
+      flightPlanCoordinates.push({lat: startPos.lat, lng: startPos.lng});
+      for(var v in lst_WorkOrders){
+        markers.push([v, lst_WorkOrders[v].Location__Latitude__s, lst_WorkOrders[v].Location__Longitude__s]);
+        flightPlanCoordinates.push({lat: lst_WorkOrders[v].Location__Latitude__s, lng: lst_WorkOrders[v].Location__Longitude__s});
+      }
+      markers.push(['start point', startPos.lat, startPos.lng]);
+      flightPlanCoordinates.push({lat: startPos.lat, lng: startPos.lng});
+
+      // Info Window Content
+      var infoWindowContent = [
+        ['<div class="info_content">' +
+        '<h3>London Eye</h3>' +
+        '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
+        ['<div class="info_content">' +
+        '<h3>Palace of Westminster</h3>' +
+        '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
+        '</div>']
+      ];
+
+      // Display multiple markers on a map
+      var infoWindow = new google.maps.InfoWindow(), marker, i;
+
+      var flightPath = new google.maps.Polyline({
+        path: flightPlanCoordinates,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
+
+      flightPath.setMap(map);
+
+      // Loop through our array of markers & place each one on the map
+      for( i = 0; i < markers.length; i++ ) {
+        var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
+        bounds.extend(position);
+        marker = new google.maps.Marker({
+          position: position,
+          map: map,
+          title: markers[i][0]
+        });
+
+        // Allow each marker to have an info window
+        google.maps.event.addListener(marker, 'click', (function(marker, i) {
+          return function() {
+            infoWindow.setContent(infoWindowContent[i][0]);
+            infoWindow.open(map, marker);
+          }
+        })(marker, i));
+
+        // Automatically center the map fitting all markers on the screen
+        map.fitBounds(bounds);
+      }
+      // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
+      var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+        this.setZoom(14);
+        google.maps.event.removeListener(boundsListener);
+      });
+
+      var polyLengthInMeters = google.maps.geometry.spherical.computeLength(flightPath.getPath().getArray());
+      console.log(polyLengthInMeters);
+    }
+
+    function setFocusOnLoad() {}
+    </script>
+  </body>
 </apex:page>
