@@ -1,13 +1,14 @@
 /**
  * 	Utils for all the functions.
- **/ 
+ **/
 public class Utils{
+
 	/**
 	* 	Utils to optimize the customer list and retun the most efficient way (ordered list).
 	**/
 	public static Boolean optimizeOneStepList(List<Work_Order__c> lst_WorkOrders, Location startPoint, Boolean oneStep, String mode){
-		Boolean isDone = true;
-		Integer maxIterations = lst_WorkOrders.size();
+		Boolean isDone = true; // MOTI misleading name ( isSolutionFound? and probably shoud inverse values)
+		Integer maxIterations = lst_WorkOrders.size(); // misleading name variable represents iterations counter and equals maxiteration only in the begining
 		try{
 			while(isDone && maxIterations > 0){
 				if(lst_WorkOrders.size() < 3){
@@ -26,20 +27,20 @@ public class Utils{
 						if(j == i + 1){
 							if(checkDistance_Close(getLocation(lst_WorkOrders[i-1]), getLocation(lst_WorkOrders[i]),
 													getLocation(lst_WorkOrders[j]), getLocation(lst_WorkOrders[j+1]), mode)){
-								swap(lst_WorkOrders, i, j); 
+								swap(lst_WorkOrders, i, j);
 								if(oneStep){
-									isDone = false;								
+									isDone = false;
 								}
 							}
 						}else{
 							if(checkDistance(getLocation(lst_WorkOrders[i-1]), getLocation(lst_WorkOrders[i]), getLocation(lst_WorkOrders[i+1]),
 												getLocation(lst_WorkOrders[j-1]), getLocation(lst_WorkOrders[j]), getLocation(lst_WorkOrders[j+1]), mode)){
-								swap(lst_WorkOrders, i, j); 
+								swap(lst_WorkOrders, i, j);
 								if(oneStep){
-									isDone = false;								
+									isDone = false;
 								}
-							}					
-						} 
+							}
+						}
 					}
 				}
 
@@ -50,29 +51,30 @@ public class Utils{
 		}catch(Exception ex){
 			System.debug('Error -Utils -optimizeOneStepList: ' + ex.getLineNumber() +', ' + ex.getMessage());
 		}
-		
+
 		return isDone;
 	}
 
+	// MOTI inconsistent commenct style style (using /**/ javadoc before and now one liners)
 	//Check if there is a better route with the start point at the start
 	public static void checkListWithBeginingStartPoint(List<Work_Order__c> lst_WorkOrders, Location startPoint, Boolean isDone, Boolean oneStep, String mode){
 		if( isDone && checkDistance_Close(startPoint, getLocation(lst_WorkOrders[0]), getLocation(lst_WorkOrders[1]), getLocation(lst_WorkOrders[2]), mode)){
-			swap(lst_WorkOrders, 0, 1); 
+			swap(lst_WorkOrders, 0, 1);
 			isDone = false;
 		}
 		for(Integer j = 2; isDone && j < lst_WorkOrders.size(); j++){
 			if(j+1 >= lst_WorkOrders.size()){
 				if(checkDistance(startPoint, getLocation(lst_WorkOrders[0]), getLocation(lst_WorkOrders[1]), getLocation(lst_WorkOrders[j-1]), getLocation(lst_WorkOrders[j]), startPoint, mode)){
-					swap(lst_WorkOrders, 0, j); 
+					swap(lst_WorkOrders, 0, j);
 					if(oneStep){
-						isDone = false;								
+						isDone = false;
 					}
 				}
 			}else if(checkDistance(startPoint, getLocation(lst_WorkOrders[0]), getLocation(lst_WorkOrders[1]), getLocation(lst_WorkOrders[j-1]), getLocation(lst_WorkOrders[j]), getLocation(lst_WorkOrders[j+1]), mode)){
-				swap(lst_WorkOrders, 0, j); 
+				swap(lst_WorkOrders, 0, j);
 				if(oneStep){
-					isDone = false;								
-				}								
+					isDone = false;
+				}
 			}
 		}
 	}
@@ -81,16 +83,16 @@ public class Utils{
 	public static void checkListWithMiddleStartPoint(List<Work_Order__c> lst_WorkOrders, Location startPoint, Boolean isDone, Boolean oneStep, String mode){
 		if( isDone && checkDistance(getLocation(lst_WorkOrders[lst_WorkOrders.size() -2]), getLocation(lst_WorkOrders[lst_WorkOrders.size() -1]), startPoint,
 							startPoint, getLocation(lst_WorkOrders[0]), getLocation(lst_WorkOrders[1]), mode)){
-			swap(lst_WorkOrders, 0, lst_WorkOrders.size() -1); 
+			swap(lst_WorkOrders, 0, lst_WorkOrders.size() -1);
 			if(oneStep){
-				isDone = false;								
+				isDone = false;
 			}
 		}
 
 		if(checkDistance_Close(getLocation(lst_WorkOrders[lst_WorkOrders.size() -3]), getLocation(lst_WorkOrders[lst_WorkOrders.size() -2]), getLocation(lst_WorkOrders[lst_WorkOrders.size() -1]), startPoint, mode)){
-			swap(lst_WorkOrders, lst_WorkOrders.size() -2, lst_WorkOrders.size() -1); 
+			swap(lst_WorkOrders, lst_WorkOrders.size() -2, lst_WorkOrders.size() -1);
 			if(oneStep){
-				isDone = false;								
+				isDone = false;
 			}
 		}
 	}
@@ -98,19 +100,19 @@ public class Utils{
 	//Check if there is a better route with the start point at the end
 	public static void checkListWithEndStartPoint(List<Work_Order__c> lst_WorkOrders, Location startPoint, Boolean isDone, Boolean oneStep, String mode){
 		for(Integer j = 1; isDone && j < lst_WorkOrders.size()-2; j++){
-			if(checkDistance(getLocation(lst_WorkOrders[j-1]), getLocation(lst_WorkOrders[j]), getLocation(lst_WorkOrders[j +1]), 
+			if(checkDistance(getLocation(lst_WorkOrders[j-1]), getLocation(lst_WorkOrders[j]), getLocation(lst_WorkOrders[j +1]),
 								getLocation(lst_WorkOrders[lst_WorkOrders.size() -2]),getLocation(lst_WorkOrders[lst_WorkOrders.size() -1]), startPoint, mode)){
-				swap(lst_WorkOrders, j, lst_WorkOrders.size() -1); 
+				swap(lst_WorkOrders, j, lst_WorkOrders.size() -1);
 				if(oneStep){
-					isDone = false;								
+					isDone = false;
 				}
 			}
-		}  
-		if(isDone && checkDistance_Close(getLocation(lst_WorkOrders[lst_WorkOrders.size() -3]), getLocation(lst_WorkOrders[lst_WorkOrders.size() -2]), 
+		}
+		if(isDone && checkDistance_Close(getLocation(lst_WorkOrders[lst_WorkOrders.size() -3]), getLocation(lst_WorkOrders[lst_WorkOrders.size() -2]),
 											getLocation(lst_WorkOrders[lst_WorkOrders.size() -1]), startPoint, mode)){
-			swap(lst_WorkOrders, lst_WorkOrders.size() -2, lst_WorkOrders.size() -1); 
+			swap(lst_WorkOrders, lst_WorkOrders.size() -2, lst_WorkOrders.size() -1);
 			if(oneStep){
-				isDone = false;								
+				isDone = false;
 			}
 		}
 	}
@@ -127,15 +129,15 @@ public class Utils{
 		if(firstIndex >= lst_WorkOrders.size()){
 			lst_WorkOrders.add(tempWO2);
 		}else{
-			lst_WorkOrders.add(firstIndex, tempWO2);			
+			lst_WorkOrders.add(firstIndex, tempWO2);
 		}
 		if(secondIndex >= lst_WorkOrders.size()){
 			lst_WorkOrders.add(tempWO1);
 		}else{
-			lst_WorkOrders.add(secondIndex, tempWO1);			
+			lst_WorkOrders.add(secondIndex, tempWO1);
 		}
 	}
- 	
+
  	//Calculate all the distance of Work_Order__c list
 	public static Double getAllDistance(List<Work_Order__c> lst_WorkOrders, Location startPoint){
 		if(lst_WorkOrders.isEmpty()){
@@ -143,7 +145,7 @@ public class Utils{
 		}
 		Double dist = Location.getDistance(startPoint, getLocation(lst_WorkOrders[0]) , 'km');
 		for(Integer i = 0; i < lst_WorkOrders.size() -1; i++){
-			dist += Location.getDistance(getLocation(lst_WorkOrders[i]), getLocation(lst_WorkOrders[i+1]) , 'km'); 
+			dist += Location.getDistance(getLocation(lst_WorkOrders[i]), getLocation(lst_WorkOrders[i+1]) , 'km');
 		}
 		dist += Location.getDistance(getLocation(lst_WorkOrders[lst_WorkOrders.size() -1]), startPoint, 'km');
 		return dist;
@@ -217,12 +219,13 @@ public class Utils{
 		return false;
 	}
 
+	// MOTI inconsistent function name style using camelCase mixed with _
 	public static Boolean checkIsShorterByTime_Close (String locA1, String locA2, String locB1, String locB2){
 		Integer distA1 = (new googleMaps(locA1, locA2)).travelTime;
 		Integer distA3 = (new googleMaps(locB1, locB2)).travelTime;
 
 		Integer distB1 = (new googleMaps(locA1, locB1)).travelTime;
-		Integer distB3 = (new googleMaps(locA2, locB2)).travelTime; 
+		Integer distB3 = (new googleMaps(locA2, locB2)).travelTime;
 		if((distA1 +  distA3) >  (distB1 +  distB3)){
 			return true;
 		}
